@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;700&display=swap" rel="stylesheet">
-    <title>বাংলা উইকিপিডিয়া নিবন্ধের শব্দ গণক</title>
+    <title>উইকি নিবন্ধের শব্দ গণক</title>
     <style>
         body {
             font-family: 'Noto Serif Bengali', serif;
@@ -25,12 +25,14 @@
             color: #333;
             text-align: center;
         }
-        #articleInput {
+        input, textarea {
             font-family: 'Noto Serif Bengali', serif;
             width: 100%;
-            height: 150px;
             padding: 10px;
             margin-bottom: 10px;
+        }
+        #articleInput {
+            height: 150px;
         }
         button {
             font-family: 'Noto Serif Bengali', serif;
@@ -61,6 +63,7 @@
 <body>
     <div class="container">
         <h1>শব্দগণক</h1>
+        <input id="siteInput" placeholder="উইকি সাইটের ডোমেইন (যেমন: bn.wikipedia.org)" value="bn.wikipedia.org">
         <textarea id="articleInput" placeholder="এখানে নিবন্ধের নাম দিন (প্রত্যেক লাইনে একটি করে)"></textarea>
         <button id="countButton">শব্দ গুনুন</button>
         <button id="copyButton" style="display: none;">ক্লিপবোর্ডে অনুলিপি</button>
@@ -72,6 +75,7 @@
         document.getElementById('copyButton').addEventListener('click', copyToClipboard);
 
         async function countWordsForMultipleArticles() {
+            const site = document.getElementById('siteInput').value.trim();
             const articleNames = document.getElementById('articleInput').value.split('\n').filter(name => name.trim() !== '');
             const resultElement = document.getElementById('result');
             resultElement.textContent = 'প্রক্রিয়াকরণ হচ্ছে...';
@@ -80,7 +84,7 @@
             let totalWords = 0;
 
             for (const articleName of articleNames) {
-                const result = await getWordCount(articleName.trim());
+                const result = await getWordCount(site, articleName.trim());
                 if (typeof result.count === 'number') {
                     totalWords += result.count;
                     wikitext += `| ${articleName} || ${result.count}\n|-\n`;
@@ -94,9 +98,9 @@
             document.getElementById('copyButton').style.display = 'block';
         }
 
-        async function getWordCount(title) {
+        async function getWordCount(site, title) {
             try {
-                const response = await fetch(`https://bn.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(title)}&format=json&prop=text&origin=*`);
+                const response = await fetch(`https://${site}/w/api.php?action=parse&page=${encodeURIComponent(title)}&format=json&prop=text&origin=*`);
                 const data = await response.json();
                 
                 if (data.error) {
@@ -114,7 +118,7 @@
                     '.reflist', '.mbox-small', '.ambox', '.navbox', '.catlinks', 
                     '.noprint', '.metadata', '.portal', '.infobox', 
                     'style', 'script', '.thumbinner'
-                ]; // add 'table', '.mw-headline' if you also want to exclude tables, page title and headings
+                ]; //, '.thumb', '.mwe-math-element', , '.mw-headline', 'table'
                 unwantedSelectors.forEach(selector => {
                     doc.querySelectorAll(selector).forEach(el => el.remove());
                 });
@@ -139,13 +143,22 @@
                 const cleanContent = content
                     .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remove zero-width spaces
                     .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+                    .replace(/[\u0964\u0965]/g, '.') // Replace Bengali full stops with Latin full stops
+                    .replace(/[\u09E6-\u09EF]/g, d => String.fromCharCode(d.charCodeAt(0) - 0x09E6 + 0x30)) // Convert Bengali digits to Latin digits
                     .trim();
 
-                // Split into words, considering Bengali word boundaries
-                const words = cleanContent.match(/[\u0980-\u09FF]+/g) || [];
+                // Count words based on the site language
+                let wordCount;
+                if (site.startsWith('bn.')) {
+                    // For Bengali, count sequences of Bengali characters
+                    wordCount = (cleanContent.match(/[\u0980-\u09FF]+/g) || []).length;
+                } else {
+                    // For other languages (assuming mainly English), use a more general word boundary approach
+                    wordCount = cleanContent.split(/\s+/).filter(word => word.match(/\p{L}/u)).length;
+                }
 
-                console.log(`Processed "${title}": ${words.length} words found`);
-                return { count: words.length };
+                console.log(`Processed "${title}": ${wordCount} words found`);
+                return { count: wordCount };
             } catch (error) {
                 console.error(`Error processing "${title}":`, error);
                 return { error: 'প্রক্রিয়াকরণে ত্রুটি' };
