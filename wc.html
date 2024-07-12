@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;700&display=swap" rel="stylesheet">
-    <title>বাংলা উইকিপিডিয়া নিবন্ধের শব্দ গণক</title>
+    <title>বাংলা উইকিপিডিয়া নিবন্ধের শব্দ গণক</title>
     <style>
         body {
             font-family: 'Noto Serif Bengali', serif;
@@ -26,14 +26,14 @@
             text-align: center;
         }
         #articleInput {
-        	font-family: 'Noto Serif Bengali', serif;
+            font-family: 'Noto Serif Bengali', serif;
             width: 100%;
             height: 150px;
             padding: 10px;
             margin-bottom: 10px;
         }
         button {
-        	font-family: 'Noto Serif Bengali', serif;
+            font-family: 'Noto Serif Bengali', serif;
             display: block;
             width: 100%;
             padding: 10px;
@@ -48,10 +48,9 @@
             background-color: #008CBA;
         }
         #result {
-        	font-family: 'Noto Serif Bengali', serif;
+            font-family: 'Noto Serif Bengali', serif;
             margin-top: 20px;
             white-space: pre-wrap;
-            font-family: monospace;
             background-color: #f8f8f8;
             padding: 10px;
             border: 1px solid #ddd;
@@ -75,17 +74,19 @@
         async function countWordsForMultipleArticles() {
             const articleNames = document.getElementById('articleInput').value.split('\n').filter(name => name.trim() !== '');
             const resultElement = document.getElementById('result');
-            resultElement.textContent = 'Processing...';
+            resultElement.textContent = 'প্রক্রিয়াকরণ হচ্ছে...';
 
             let wikitext = '{| class="wikitable sortable"\n! নিবন্ধের নাম !! শব্দসংখ্যা\n|-\n';
             let totalWords = 0;
 
             for (const articleName of articleNames) {
-                const wordCount = await getWordCount(articleName.trim());
-                if (typeof wordCount === 'number') {
-                    totalWords += wordCount;
+                const result = await getWordCount(articleName.trim());
+                if (typeof result.count === 'number') {
+                    totalWords += result.count;
+                    wikitext += `| ${articleName} || ${result.count}\n|-\n`;
+                } else {
+                    wikitext += `| ${articleName} || ${result.error}\n|-\n`;
                 }
-                wikitext += `| ${articleName} || ${wordCount}\n|-\n`;
             }
 
             wikitext += `| '''মোট শব্দ''' || '''${totalWords}'''\n|}`;
@@ -100,7 +101,7 @@
                 
                 if (data.error) {
                     console.error(`Error fetching "${title}":`, data.error.info);
-                    return 'Error';
+                    return { error: 'নিবন্ধ পাওয়া যায়নি' };
                 }
 
                 const htmlContent = data.parse.text['*'];
@@ -111,28 +112,53 @@
                 const unwantedSelectors = [
                     '.mw-empty-elt', '.mw-editsection', '.reference', '.references', 
                     '.reflist', '.mbox-small', '.ambox', '.navbox', '.catlinks', 
-                    '.noprint', 'table', '.metadata', '.portal'
-                ];
+                    '.noprint', '.metadata', '.portal', '.infobox', 
+                    'style', 'script', '.thumbinner'
+                ]; // add 'table', '.mw-headline' if you also want to exclude tables, page title and headings
                 unwantedSelectors.forEach(selector => {
                     doc.querySelectorAll(selector).forEach(el => el.remove());
                 });
 
-                const content = doc.body.textContent || "";
-                const words = content.trim().split(/\s+/);
-                return words.length;
+                // Get the main content
+                let content = '';
+                const contentElement = doc.querySelector('.mw-parser-output');
+                if (contentElement) {
+                    content = contentElement.textContent || "";
+                } else {
+                    // Fallback: get all paragraph content if .mw-parser-output is not found
+                    const paragraphs = doc.querySelectorAll('p');
+                    content = Array.from(paragraphs).map(p => p.textContent).join(' ');
+                }
+
+                if (!content) {
+                    console.error(`No content found for "${title}"`);
+                    return { error: 'বিষয়বস্তু পাওয়া যায়নি' };
+                }
+                
+                // Clean up the content
+                const cleanContent = content
+                    .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remove zero-width spaces
+                    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+                    .trim();
+
+                // Split into words, considering Bengali word boundaries
+                const words = cleanContent.match(/[\u0980-\u09FF]+/g) || [];
+
+                console.log(`Processed "${title}": ${words.length} words found`);
+                return { count: words.length };
             } catch (error) {
                 console.error(`Error processing "${title}":`, error);
-                return 'Error';
+                return { error: 'প্রক্রিয়াকরণে ত্রুটি' };
             }
         }
 
         function copyToClipboard() {
             const resultText = document.getElementById('result').textContent;
             navigator.clipboard.writeText(resultText).then(() => {
-                alert('আউটপুট ক্লিপবোর্ডে অনুলিপি করা হয়েছে!');
+                alert('আউটপুট ক্লিপবোর্ডে অনুলিপি করা হয়েছে!');
             }, (err) => {
                 console.error('Could not copy text: ', err);
-                alert('Failed to copy. Please try selecting and copying manually.');
+                alert('অনুলিপি করা ব্যর্থ হয়েছে। অনুগ্রহ করে ম্যানুয়ালি নির্বাচন করে অনুলিপি করার চেষ্টা করুন।');
             });
         }
     </script>
