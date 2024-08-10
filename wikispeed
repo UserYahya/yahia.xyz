@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Wikispeed</title>
+    <link rel="stylesheet" href="wikispeed.css" />
+
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts-more.js"></script>
+</head>
+<body>
+    <h1>Wikispeed</h1>
+
+    <p id="about">
+        This is a visualization of the rate of edits to specific Wikimedia projects.
+    </p>
+
+    <hr/>
+
+    <div class="gauge" id="global" title="All Wikipedias" data-scale="minute"></div>
+
+    <div class="gauge" id="bnwiki" title="Bangla Wikipedia" data-lang="বাংলা" data-scale="second"></div>
+    <div class="gauge" id="bnwikivoyage" title="Bangla Wikivoyage" data-lang="বাংলা" data-scale="second"></div>
+    <div class="gauge" id="bnwiktionary" title="Bangla Wiktionary" data-lang="বাংলা" data-scale="second"></div>
+    <div class="gauge" id="bnwikibooks" title="Bangla Wikibooks" data-lang="বাংলা" data-scale="second"></div>
+    <div class="gauge" id="bnwikiquote" title="Bangla Wikiquote" data-lang="বাংলা" data-scale="second"></div>
+
+    <hr/>
+
+    <div id="special-projects">
+        <div class="gauge" id="wikidatawiki" title="Wikidata" data-scale="minute"></div>
+        <div class="gauge" id="commonswiki" title="Commons" data-scale="minute"></div>
+    </div>
+    <script src="wikispeed.js"></script>
+</body>
+</html>
