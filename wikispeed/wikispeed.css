@@ -1,0 +1,59 @@
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-style: italic;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    font-weight: 100;
+}
+
+p#about {
+    width: 80%;
+    line-height: 1.5em;
+    margin: 0 auto 2rem;
+    text-align: center;
+}
+
+hr {
+    width: 50%;
+    border: none;
+    height: 1px;
+    margin: 2rem auto;
+    background: linear-gradient(to right,
+        rgba(200, 200, 200, 0) 0%,
+        rgba(200, 200, 200, 1) 25%,
+        rgba(200, 200, 200, 1) 75%,
+        rgba(200, 200, 200, 0) 100%);
+    clear: both;
+}
+
+.gauge {
+    display: inline-block;
+    width: 300px;
+    height: 300px;
+    margin: 10px;
+    vertical-align: top;
+}
+
+.gauge#global,
+.gauge#wikidatawiki,
+.gauge#commonswiki {
+    width: 400px;
+    height: 400px;
+    margin-bottom: 30px;
+}
+
+#special-projects {
+    text-align: center;
+    margin-top: 20px;
+}
+
+#special-projects .gauge {
+    display: inline-block;
+}
